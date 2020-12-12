@@ -11,6 +11,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/jpeg"
+	"image/png"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -22,9 +23,10 @@ import (
 // load ttf
 func loadFont() (*truetype.Font, error) {
 	// フォントの読み込み
-	ftBinary, err := ioutil.ReadFile("ttf/ipag.ttf")
+	const fontPath = "ttf/ipag.ttf"
+	ftBinary, err := ioutil.ReadFile(fontPath)
 	if err != nil {
-		log.Printf("can not read font file from './ttf/ipag.ttf'. err:[%s]\n", err)
+		log.Printf("can not read font file from '%s'. err:[%s]\n", fontPath, err)
 		return nil, err
 	}
 	ft, err := truetype.Parse(ftBinary)
@@ -41,15 +43,20 @@ type ImageInfo struct {
 	text   string
 }
 
-func (imageInfo ImageInfo) generateImage(fontFace *font.Face) (*bytes.Buffer, error) {
+func (imageInfo ImageInfo) generateImage(fontFace *font.Face, imageType int) (*bytes.Buffer, error) {
 	const textTopMargin = 90
 
 	img := image.NewRGBA(image.Rect(0, 0, imageInfo.width, imageInfo.height))
-	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.White}, image.Point{}, draw.Src)
+	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.RGBA{
+		R: 200,
+		G: 50,
+		B: 200,
+		A: 255,
+	}}, image.Point{}, draw.Over)
 
 	dr := &font.Drawer{
 		Dst:  img,
-		Src:  image.Black,
+		Src:  image.White,
 		Face: *fontFace,
 		Dot:  fixed.Point26_6{},
 	}
@@ -71,7 +78,12 @@ func (imageInfo ImageInfo) generateImage(fontFace *font.Face) (*bytes.Buffer, er
 	}
 
 	buf := &bytes.Buffer{}
-	err := jpeg.Encode(buf, img, nil)
+	var err error
+	if imageType == 0 {
+		err = jpeg.Encode(buf, img, nil)
+	} else {
+		err = png.Encode(buf, img)
+	}
 
 	if err != nil {
 		log.Println(err)
@@ -87,7 +99,8 @@ var face font.Face
 func main() {
 	ft, err := loadFont()
 	if err != nil {
-		log.Println(err)
+		log.Panicf("can not load font file. %v", err)
+		// never return
 		return
 	}
 	opt := truetype.Options{
@@ -100,7 +113,7 @@ func main() {
 	}
 	face = truetype.NewFace(ft, &opt)
 
-	http.HandleFunc("/image/", imageGenerateHandler)
+	http.HandleFunc("/cam/", imageGenerateHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -108,36 +121,67 @@ func main() {
 func imageGenerateHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Hello, %q\n", html.EscapeString(r.URL.Path))
 	paths := strings.Split(r.URL.Path, "/")
-	wh := paths[2]
-	whs := strings.Split(wh, "x")
-	width, err := strconv.Atoi(whs[0])
-	if err != nil {
-		log.Println(err)
-		return
+	typ := paths[2]
+	idStr := paths[3]
+	var imageType int
+	if strings.Contains(idStr, ".") {
+		ids := strings.Split(idStr, ".")
+		idStr = ids[0]
+		if ids[1] == "jpg" {
+			imageType = 0
+		} else if ids[1] == "png" {
+			imageType = 1
+		} else {
+			imageType = 0
+		}
 	}
-	height, err := strconv.Atoi(whs[1])
+	//wh := paths[2]
+	//whs := strings.Split(wh, "x")
+	//width, err := strconv.Atoi(whs[0])
+	//if err != nil {
+	//	log.Println(err)
+	//	return
+	//}
+	//height, err := strconv.Atoi(whs[1])
+	//if err != nil {
+	//	log.Println(err)
+	//	return
+	//}
+	//id := paths[3]
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Println(err)
-		return
+		idStr = "id unknown"
+		id = 0
 	}
-	id := paths[3]
+	var width, height int
+	if id%2 == 0 {
+		width = 640
+		height = 480
+	} else {
+		width = 1920
+		height = 1080
+	}
 	log.Printf("W: %d\n", width)
 	log.Printf("H: %d\n", height)
-	log.Printf("id : %s\n", id)
+	log.Printf("id : %s\n", idStr)
 	dateString := time.Now().Format("2006/01/02 15:04:05 JST")
 	var imageInfo = ImageInfo{
 		width:  width,
 		height: height,
-		text:   fmt.Sprintf("%s\n%s", id, dateString),
+		text:   fmt.Sprintf("%s\n%s\n%s", idStr, typ, dateString),
 	}
-	buf, err := imageInfo.generateImage(&face)
+	buf, err := imageInfo.generateImage(&face, imageType)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "image/jpeg")
+	if imageType == 0 {
+		w.Header().Set("Content-Type", "image/jpeg")
+	} else {
+		w.Header().Set("Content-Type", "image/png")
+	}
 	_, err = w.Write(buf.Bytes())
 	if err != nil {
 		log.Println(err)
