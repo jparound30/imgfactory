@@ -14,6 +14,7 @@ import (
 	"image/png"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -75,7 +76,20 @@ func (imageInfo ImageInfo) generateImage(fontFace *font.Face, imageType int) (*b
 }
 
 func main() {
+	// load font file.
 	_, err := getFont()
+	if os.IsNotExist(err) {
+		log.Printf("IPAフォントをダウンロードします...")
+		err = fontDownload()
+		if err != nil {
+			log.Panicf("can not download ipa gothic font file. %v", err)
+			// never return
+			return
+		}
+		log.Printf("完了\n")
+		// retry loading font file.
+		_, err = getFont()
+	}
 	if err != nil {
 		log.Panicf("can not load font file. %v", err)
 		// never return
