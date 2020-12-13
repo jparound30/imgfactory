@@ -12,30 +12,12 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"image/png"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
-
-// load ttf
-func loadFont() (*truetype.Font, error) {
-	// フォントの読み込み
-	const fontPath = "ttf/ipag.ttf"
-	ftBinary, err := ioutil.ReadFile(fontPath)
-	if err != nil {
-		log.Printf("can not read font file from '%s'. err:[%s]\n", fontPath, err)
-		return nil, err
-	}
-	ft, err := truetype.Parse(ftBinary)
-	if err != nil {
-		log.Printf("can not parse font file from './ttf/ipag.ttf'. err:[%s]\n", err)
-		return nil, err
-	}
-	return ft, nil
-}
 
 type ImageInfo struct {
 	width  int
@@ -92,27 +74,13 @@ func (imageInfo ImageInfo) generateImage(fontFace *font.Face, imageType int) (*b
 	return buf, nil
 }
 
-// render
-
-var face font.Face
-
 func main() {
-	ft, err := loadFont()
+	_, err := getFont()
 	if err != nil {
 		log.Panicf("can not load font file. %v", err)
 		// never return
 		return
 	}
-	opt := truetype.Options{
-		Size:              48,
-		DPI:               0,
-		Hinting:           0,
-		GlyphCacheEntries: 0,
-		SubPixelsX:        0,
-		SubPixelsY:        0,
-	}
-	face = truetype.NewFace(ft, &opt)
-
 	http.HandleFunc("/cam/", imageGenerateHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -170,6 +138,18 @@ func imageGenerateHandler(w http.ResponseWriter, r *http.Request) {
 		height: height,
 		text:   fmt.Sprintf("%s\n%s\n%s", idStr, typ, dateString),
 	}
+
+	ft, _ := getFont()
+	opt := truetype.Options{
+		Size:              48,
+		DPI:               0,
+		Hinting:           0,
+		GlyphCacheEntries: 0,
+		SubPixelsX:        0,
+		SubPixelsY:        0,
+	}
+	face := truetype.NewFace(ft, &opt)
+
 	buf, err := imageInfo.generateImage(&face, imageType)
 	if err != nil {
 		log.Println(err)
