@@ -14,12 +14,12 @@ func loadFont() (*truetype.Font, error) {
 	const fontPath = "ttf/ipag.ttf"
 	ftBinary, err := ioutil.ReadFile(fontPath)
 	if err != nil {
-		log.Printf("can not read font file from '%s'. err:[%s]\n", fontPath, err)
+		log.Printf("cannot read font file from '%s'. err:[%s]\n", fontPath, err)
 		return nil, err
 	}
 	ft, err := truetype.Parse(ftBinary)
 	if err != nil {
-		log.Printf("can not parse font file from './ttf/ipag.ttf'. err:[%s]\n", err)
+		log.Printf("cannot parse font file from './ttf/ipag.ttf'. err:[%s]\n", err)
 		return nil, err
 	}
 	return ft, nil
