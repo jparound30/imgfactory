@@ -86,6 +86,8 @@ func imageGenerateHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.Header().Set("Content-Type", "image/png")
 	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	_, err = w.Write(buf.Bytes())
 	if err != nil {
 		logger.Println(err)
