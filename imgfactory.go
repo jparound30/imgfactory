@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	config := LoadConfig()
+
 	// load font file.
 	_, err := getFont()
 	if os.IsNotExist(err) {
@@ -33,7 +35,8 @@ func main() {
 	}
 	http.HandleFunc("/", imageGenerateHandler)
 
-	logger.Fatal(http.ListenAndServe(":8080", nil))
+	logger.Printf("Start listening. localhost:%d", config.Port)
+	logger.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
 }
 
 func imageGenerateHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,28 +55,21 @@ func imageGenerateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var width, height int
-	width = 640
-	height = 480
+	config := LoadConfig()
 
-	logger.Printf("W: %d, H: %d, file : %s\n", width, height, resourceName)
+	logger.Printf("W: %d, H: %d, file : %s\n", config.ImageOptions.Width, config.ImageOptions.Height, resourceName)
 
-	dateString := time.Now().Format("2006/01/02 15:04:05 JST")
+	text := fmt.Sprintf("%s\n\n%s\n\n%s", r.URL.Path, resourceName, time.Now().Format("2006/01/02 15:04:05 JST"))
 	var imageInfo = ImageInfo{
-		width:     width,
-		height:    height,
-		text:      fmt.Sprintf("%s\n\n%s\n\n%s", r.URL.Path, resourceName, dateString),
+		width:     config.ImageOptions.Width,
+		height:    config.ImageOptions.Height,
+		text:      text,
 		imageType: imageType,
 	}
 
 	ft, _ := getFont()
 	opt := truetype.Options{
-		Size:              36,
-		DPI:               0,
-		Hinting:           0,
-		GlyphCacheEntries: 0,
-		SubPixelsX:        0,
-		SubPixelsY:        0,
+		Size: config.FontOptions.SizeInPoint,
 	}
 	face := truetype.NewFace(ft, &opt)
 
