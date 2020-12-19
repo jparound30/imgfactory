@@ -1,4 +1,4 @@
-package main
+package imgfactory
 
 import (
 	"archive/zip"
@@ -14,7 +14,7 @@ const IPAGothicDLUrl = "http://moji.or.jp/wp-content/ipafont/IPAfont/ipag00303.z
 const FontFileName = "ipag.zip"
 const FontDownloadDir = "ttf"
 
-func fontDownload() error {
+func FontDownload() error {
 	response, err := http.Get(IPAGothicDLUrl)
 	if err != nil {
 		return err

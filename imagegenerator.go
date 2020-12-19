@@ -1,4 +1,4 @@
-package main
+package imgfactory
 
 import (
 	"bytes"
@@ -22,17 +22,17 @@ const (
 )
 
 type ImageInfo struct {
-	width     int
-	height    int
-	text      string
-	imageType ImageType
+	Width     int
+	Height    int
+	Text      string
+	ImageType ImageType
 }
 
 const textTopMargin = 90
 const leftMargin = 30
 
-func (imageInfo ImageInfo) generateImage(fontFace *font.Face) (*bytes.Buffer, error) {
-	img := image.NewRGBA(image.Rect(0, 0, imageInfo.width, imageInfo.height))
+func (imageInfo ImageInfo) GenerateImage(fontFace *font.Face) (*bytes.Buffer, error) {
+	img := image.NewRGBA(image.Rect(0, 0, imageInfo.Width, imageInfo.Height))
 	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.RGBA{
 		R: 200,
 		G: 50,
@@ -47,7 +47,7 @@ func (imageInfo ImageInfo) generateImage(fontFace *font.Face) (*bytes.Buffer, er
 		Dot:  fixed.Point26_6{},
 	}
 
-	texts := strings.Split(imageInfo.text, "\n")
+	texts := strings.Split(imageInfo.Text, "\n")
 
 	dr.Dot.X = fixed.I(leftMargin)
 	dr.Dot.Y = fixed.I(textTopMargin)
@@ -56,7 +56,7 @@ func (imageInfo ImageInfo) generateImage(fontFace *font.Face) (*bytes.Buffer, er
 		for _, c := range text {
 			bounds, advance := dr.BoundString(string(c))
 			logger.Printf("    %+v / %+v", bounds, advance)
-			if bounds.Max.X > fixed.I(imageInfo.width-leftMargin) {
+			if bounds.Max.X > fixed.I(imageInfo.Width-leftMargin) {
 				// advance y and reset x initial position
 				dr.Dot.X = fixed.I(leftMargin)
 				dr.Dot.Y = dr.Dot.Y + fixed.I(36)
@@ -71,7 +71,7 @@ func (imageInfo ImageInfo) generateImage(fontFace *font.Face) (*bytes.Buffer, er
 
 	buf := &bytes.Buffer{}
 	var err error
-	if imageInfo.imageType == ImagePng {
+	if imageInfo.ImageType == ImagePng {
 		err = png.Encode(buf, img)
 	} else {
 		err = jpeg.Encode(buf, img, nil)

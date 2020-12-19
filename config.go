@@ -1,4 +1,4 @@
-package main
+package imgfactory
 
 type Config struct {
 	Port         int

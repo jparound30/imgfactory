@@ -1,4 +1,4 @@
-package main
+package imgfactory
 
 import (
 	"github.com/golang/freetype/truetype"
@@ -25,7 +25,7 @@ func loadFont() (*truetype.Font, error) {
 	return ft, nil
 }
 
-func getFont() (*truetype.Font, error) {
+func GetFont() (*truetype.Font, error) {
 	var err error
 	if tf == nil {
 		tf, err = loadFont()
