@@ -36,7 +36,7 @@ func main() {
 	}
 	http.HandleFunc("/", imageGenerateHandler)
 
-	logger.Printf("Start listening. localhost:%d", config.Port)
+	logger.Printf("Start listening. http://localhost:%d", config.Port)
 	logger.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil))
 }
 
